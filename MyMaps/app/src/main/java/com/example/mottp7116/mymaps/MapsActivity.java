@@ -4,6 +4,7 @@ import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.View;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -15,6 +16,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    boolean type = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +42,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+
         // Add a marker in Sydney and move the camera
         LatLng birth = new LatLng(32.768799, -97.309341);
         mMap.addMarker(new MarkerOptions().position(birth).title("I was born here!"));
@@ -49,6 +52,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return;
         }
         mMap.setMyLocationEnabled(true);
+    }
+
+    public void setToggle(View v)
+    {
+        if (type == true) {
+            mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+            type = false;
+        }
+
+        else {
+            mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+            type = true;
+        }
     }
 
 
