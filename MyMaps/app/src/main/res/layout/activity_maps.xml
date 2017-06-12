@@ -4,9 +4,11 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+
     <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
         <Button
             android:layout_width="wrap_content"
@@ -14,12 +16,43 @@
             android:text="Toggle View"
             android:id="@+id/button_toggle"
             android:layout_gravity="center_horizontal"
-            android:onClick="setToggle" />
+            android:onClick="changeMapType" />
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear Markers"
+            android:id="@+id/button_clear"
+            android:onClick="clearMarkers" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Track Me"
+            android:id="@+id/button_track"
+            android:nestedScrollingEnabled="true"
+            android:onClick="trackMe" />
     </LinearLayout>
 
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/editText"
+            android:text="                                         " />
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search"
+            android:id="@+id/button_search"
+            android:onClick="search" />
+
+    </LinearLayout>
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"

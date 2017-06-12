@@ -1,9 +1,12 @@
 package com.example.mottp7116.mymaps;
 
+
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,6 +16,8 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -24,6 +29,10 @@ import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static android.location.LocationManager.GPS_PROVIDER;
 import static android.location.LocationManager.NETWORK_PROVIDER;
@@ -40,8 +49,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final float MIN_DISTANCE_CHANGE_FOR_UPDATES = 5.0f;
     private Location myLocation = null;
     private LatLng userLocation = null;
+    Button searchButton;
+    private boolean isTracked = true;
+    EditText search;
     private static final float MY_LOCATION_ZOOM_FACTORY = 17;
-    private boolean isTracked = false;
+    private boolean gpsColor = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +85,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         // Add a marker in Sydney and move the camera
-        LatLng birthPlace = new LatLng(32.7157, -117.1611);
+        LatLng birthPlace = new LatLng(32.6, -97.4);
         //LatLng currentPos = new LatLng(latitude, longitude);
         mMap.addMarker(new MarkerOptions().position(birthPlace).title("Born Here!!!!"));
         //mMap.addMarker(new MarkerOptions().position(currentPos).title("Current Pos!!!!"));
@@ -95,6 +107,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void getLocation() {
+        isTracked = false;
 
         try {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -147,6 +160,51 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public void search(View v) {
+        mMap.clear();
+        search = (EditText) findViewById(R.id.editText);
+        searchButton = (Button) findViewById(R.id.button_search);
+
+        String location = search.getText().toString();
+        List<Address> addressList = new ArrayList<>();
+        List<Address> distanceList = new ArrayList<>();
+
+        //checks to see if nothing is entered in the search so the app doesn't crash
+        if (location.equals("")) {
+            Toast.makeText(MapsActivity.this, "No Search Entered", Toast.LENGTH_SHORT).show();
+            return;
+        } else if (myLocation == null) {
+            //if there is no location within the radius and the app needs a fallback
+            Toast.makeText(MapsActivity.this, "No known location; please press 'Track Me' then try searching again", Toast.LENGTH_SHORT).show();
+            return;
+        } else if (location != null || !location.equals("")) {
+            Log.d("MyMaps", "search feature started");
+            Geocoder geocoder = new Geocoder(this);
+
+
+            try {
+                addressList = geocoder.getFromLocationName(location, 1000, (myLocation.getLatitude() - (5.0 / 60)), (myLocation.getLongitude() - (5.0 / 60)), (myLocation.getLatitude() + (5.0 / 60)), (myLocation.getLongitude() + (5.0 / 60)));
+
+                Log.d("MyMaps", "made a max 100 entry search result");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            for (int i = 0; i < addressList.size(); i++) {
+                Address address = addressList.get(i);
+                LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+                mMap.addMarker(new MarkerOptions().position(latLng).title("Search Results"));
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+            }
+        }
+    }
+
+    public void clearMarkers(View v) {
+
+        mMap.clear();
+
+    }
+
 
     public void changeMapType(View v) {
         if (mMap.getMapType() == GoogleMap.MAP_TYPE_NORMAL) {
@@ -155,26 +213,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         }
     }
-   /*
-   public void searchPlaces(View view) {
-       EditText locationSearch = (EditText) findViewById(R.id.searchField);
-       String location = locationSearch.getText().toString();
-       List<Address> addressList = null;
-
-       if (location != null || !location.equals("")) {
-           Geocoder geocoder = new Geocoder(this);
-           try {
-               addressList = geocoder.getFromLocationName(location, 1);
-
-           } catch (IOException e) {
-               e.printStackTrace();
-           }
-           Address address = addressList.get(0);
-           LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
-           mMap.addMarker(new MarkerOptions().position(latLng).title("Search Results"));
-           mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-       }
-   } */
 
 
     public void dropMarker(String provider) {
@@ -206,9 +244,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Toast.makeText(MapsActivity.this, "" + myLocation.getLatitude() + ", " + myLocation.getLongitude(), Toast.LENGTH_SHORT).show();
 
             CameraUpdate update = CameraUpdateFactory.newLatLngZoom(userLocation, MY_LOCATION_ZOOM_FACTORY);
+            Circle myCircle;
 
             //add a shape for a marker (don't use standard teardrop marker)
-            Circle myCircle = mMap.addCircle(new CircleOptions().center(userLocation).radius(1).strokeColor(Color.MAGENTA).strokeWidth(2).fillColor(Color.MAGENTA));
+            if (gpsColor == true) {
+                myCircle = mMap.addCircle(new CircleOptions().center(userLocation).radius(1).strokeColor(Color.MAGENTA).strokeWidth(2).fillColor(Color.MAGENTA));
+                Log.d("MyMaps", "magenta dot laid for GPS");
+            } else if (gpsColor == false) {
+                myCircle = mMap.addCircle(new CircleOptions().center(userLocation).radius(1).strokeColor(Color.RED).strokeWidth(2).fillColor(Color.RED));
+                Log.d("MyMaps", "red dot laid for Network");
+            }
+
 
             mMap.animateCamera(update);
         }
@@ -216,14 +262,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void trackMe(View view) {
-        isTracked = true;
+
         if (isTracked == true) {
+            Toast.makeText(MapsActivity.this, "getting location", Toast.LENGTH_SHORT).show();
             getLocation();
-            isTracked = false;
+
+        } else if (isTracked == false) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            locationManager.removeUpdates(locationListenerNetwork);
+            locationManager.removeUpdates(locationListenerGps);
+            Toast.makeText(MapsActivity.this, "Stopping Tracking", Toast.LENGTH_SHORT).show();
+            isTracked = true;
         }
-        if (isTracked == false) {
-            return;
-        }
+    }
+
+    public void stopTrack(View view) {
+        isTracked = false;
     }
 
 
@@ -238,7 +301,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             dropMarker(LocationManager.GPS_PROVIDER);
 
             // disable network updates (see locationManager API to remove updates)
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
                 //    ActivityCompat#requestPermissions
                 // here to request the missing permissions, and then overriding
@@ -248,8 +311,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-            locationManager.removeUpdates
-                    (locationListenerNetwork);
+            locationManager.removeUpdates(locationListenerNetwork);
+            gpsColor = true;
 
         }
 
@@ -310,6 +373,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             //drop a marker on the map (create a method called drop a marker)
             dropMarker(LocationManager.NETWORK_PROVIDER);
+            gpsColor = false;
 
             //relaunch request for network location updates
 
@@ -340,6 +404,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 }
+
 
 
 
